@@ -1,7 +1,7 @@
 
 import os
 import shutil
-from flask import json
+from flask import current_app, json
 import joblib
 import numpy as np
 import tensorflow as tf
@@ -28,9 +28,12 @@ def load_model_util(model_id):
     if not db_model.is_active:
         raise ValueError(f"Model {db_model.name} is inactive")
     
+    # Fix: Construct full path to model file
+    full_model_path = os.path.join(current_app.static_folder, db_model.file_path)
+    
     try:
         if db_model.framework == 'sklearn':
-            model = joblib.load(db_model.file_path)
+            model = joblib.load(full_model_path)  # Use full_model_path
             scaler = None
             if db_model.scaler_path and os.path.exists(db_model.scaler_path):
                 scaler = joblib.load(db_model.scaler_path)
@@ -43,7 +46,7 @@ def load_model_util(model_id):
             }
             
         elif db_model.framework == 'tensorflow':
-            model = tf.keras.models.load_model(db_model.file_path)
+            model = tf.keras.models.load_model(full_model_path)  # Use full_model_path
             
             model_wrapper = {
                 'model': model,
@@ -151,9 +154,12 @@ def load_model_by_id(model_id):
     if not db_model or not db_model.is_active:
         raise ValueError(f"Model not found or inactive")
     
+    # Fix: Construct full path to model file
+    full_model_path = os.path.join(current_app.static_folder, db_model.file_path)
+    
     try:
         if db_model.framework == 'sklearn':
-            model = joblib.load(db_model.file_path)
+            model = joblib.load(full_model_path)  # Use full_model_path
             scaler = None
             if db_model.scaler_path and os.path.exists(db_model.scaler_path):
                 scaler = joblib.load(db_model.scaler_path)
@@ -167,7 +173,7 @@ def load_model_by_id(model_id):
             
         elif db_model.framework == 'tensorflow':
             import tensorflow as tf
-            model = tf.keras.models.load_model(db_model.file_path)
+            model = tf.keras.models.load_model(full_model_path)  # Use full_model_path
             
             return {
                 'model': model,
@@ -179,7 +185,7 @@ def load_model_by_id(model_id):
         elif db_model.framework == 'xgboost':
             import xgboost as xgb
             model = xgb.Booster()
-            model.load_model(db_model.file_path)
+            model.load_model(full_model_path)  # Use full_model_path
             
             return {
                 'model': model,
@@ -187,29 +193,6 @@ def load_model_by_id(model_id):
                 'framework': 'xgboost',
                 'metadata': db_model
             }
-            
-        # elif db_model.framework == 'lightgbm':
-        #     import lightgbm as lgb
-        #     model = lgb.Booster(model_file=db_model.file_path)
-            
-        #     return {
-        #         'model': model,
-        #         'scaler': None,
-        #         'framework': 'lightgbm',
-        #         'metadata': db_model
-        #     }
-            
-        # elif db_model.framework == 'catboost':
-        #     from catboost import CatBoostClassifier
-        #     model = CatBoostClassifier()
-        #     model.load_model(db_model.file_path)
-            
-        #     return {
-        #         'model': model,
-        #         'scaler': None,
-        #         'framework': 'catboost',
-        #         'metadata': db_model
-        #     }
             
         else:
             raise ValueError(f"Unsupported framework: {db_model.framework}")
