@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Dataset Management - Traffic Sign Recognition{% endblock %}
+
+{% block content %}
+
+<h2><i class="fas fa-cogs"></i> Dataset Management</h2>
+<p class="text-muted">Manage and validate your loaded dataset</p>
+
+{% if current_dataset %}
+<section class="mb-4">
+    <h5><i class="fas fa-database"></i> Current Dataset: {{ current_dataset.name }}</h5>
+    <p><strong>Status:</strong> {{ current_dataset.status }}</p>
+    <p><strong>Total Images:</strong> {{ current_dataset.total_images }}</p>
+    <p><strong>Classes:</strong> {{ current_dataset.num_classes }}</p>
+    <p><strong>Created:</strong> {{ current_dataset.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+    
+    <form method="POST" class="mt-3" action="{{ url_for('dataset.dataset_management') }}">
+  <!-- templates/dataset_management.html -->
+
+    {{ form.hidden_tag() }}
+    
+    {{ form.validate_btn(class="btn btn-info") }}
+    {{ form.export_btn(class="btn btn-primary") }}
+    {{ form.delete_btn(class="btn btn-danger", onclick="return confirm('Delete entire dataset?')") }}
+
+    </form>
+</section>
+
+{% if validation_results %}
+<section class="mb-4">
+    <h5><i class="fas fa-clipboard-check"></i> Validation Results</h5>
+    
+    {% if validation_results.errors %}
+    <h6 class="text-danger">Errors Found:</h6>
+    <ul class="text-danger">
+        {% for error in validation_results.errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if validation_results.warnings %}
+    <h6 class="text-warning">Warnings:</h6>
+    <ul class="text-warning">
+        {% for warning in validation_results.warnings %}
+        <li>{{ warning }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if validation_results.is_valid %}
+    <p class="text-success"><i class="fas fa-check"></i> Dataset is valid and ready for training!</p>
+    {% endif %}
+</section>
+{% endif %}
+
+<section class="mb-4">
+    <h5><i class="fas fa-chart-bar"></i> Class Distribution</h5>
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>Class</th>
+                <th>Train</th>
+                <th>Test</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for class_id in range(43) %}
+            {% set train_count = current_dataset.images|selectattr("class_id", "equalto", class_id)|selectattr("dataset_type", "equalto", "train")|list|length %}
+            {% set test_count = current_dataset.images|selectattr("class_id", "equalto", class_id)|selectattr("dataset_type", "equalto", "test")|list|length %}
+            <tr>
+                <td>{{ class_id }}</td>
+                <td>{{ train_count }}</td>
+                <td>{{ test_count }}</td>
+                <td>{{ train_count + test_count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+{% if sample_images %}
+<section class="mb-4">
+    <h5><i class="fas fa-image"></i> Sample Images</h5>
+    {% for class_id, samples in sample_images.items() %}
+    <h6>Class {{ class_id }}</h6>
+    {% for sample in samples %}
+    <img src="{{ url_for('static', filename=sample.image_path) }}" 
+         class="img-thumbnail" style="width: 64px; height: 64px; margin: 2px;"
+         alt="Class {{ class_id }} sample">
+    {% endfor %}
+    {% endfor %}
+</section>
+{% endif %}
+
+{% else %}
+<section class="text-center py-5">
+    <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+    <h4>No Dataset Loaded</h4>
+    <p class="text-muted">Load a dataset first to see management options</p>
+    <a href="{{ url_for('dataset.dataset_loader') }}" class="btn btn-primary">Load Dataset</a>
+</section>
+{% endif %}
+
+<section class="mt-4">
+    <h5><i class="fas fa-history"></i> Dataset History</h5>
+    {% if dataset_history %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Images</th>
+                <th>Classes</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dataset in dataset_history %}
+            <tr>
+                <td>{{ dataset.name }}</td>
+                <td>
+                    <span class="badge bg-{{ 'success' if dataset.status == 'ready' else 'warning' }}">
+                        {{ dataset.status }}
+                    </span>
+                </td>
+                <td>{{ dataset.total_images }}</td>
+                <td>{{ dataset.num_classes }}</td>
+                <td>{{ dataset.created_at.strftime('%m/%d %H:%M') }}</td>
+                <td>
+                    <a href="{{ url_for('dataset.dataset_management', dataset_id=dataset.id) }}" class="btn btn-sm btn-outline-primary">Select</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No datasets found</p>
+    {% endif %}
+</section>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteDataset(datasetId) {
+    if (confirm('Delete dataset?')) {
+        fetch(`/dataset/delete/${datasetId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

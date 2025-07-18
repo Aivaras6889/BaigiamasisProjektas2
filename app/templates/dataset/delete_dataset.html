@@ -1,0 +1,31 @@
+
+{% extends "base.html" %}
+
+
+{% block content %}
+<form id="deleteForm" method="POST" style="display: none;">
+    {{form hidden_tag}}
+    <input type="hidden" name="_method" value="DELETE">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteDataset(datasetId) {
+    if (confirm('Delete dataset?')) {
+        fetch(`/dataset/delete/${datasetId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

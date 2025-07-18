@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Dataset Loader - Traffic Sign Recognition{% endblock %}
+
+{% block content %}
+<h2><i class="fas fa-database"></i> Dataset Loader</h2>
+<p class="text-muted">Load your traffic sign image datasets</p>
+
+<section class="form-section">
+    <h5><i class="fas fa-folder-open"></i> Load Dataset from Directory</h5>
+    <form method="POST" action="{{ url_for('dataset.dataset_loader') }}">
+        {{ form.hidden_tag() }}
+        
+        {{ form.dataset_path.label(class="form-label") }}
+        {{ form.dataset_path(class="form-control") }}
+        <p class="form-text">Path to directory containing Train/ and Test/ folders</p>
+        {% if form.dataset_path.errors %}
+            {% for error in form.dataset_path.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        {% endif %}
+        
+        {{ form.load_type.label(class="form-label") }}
+        {{ form.load_type(class="form-select") }}
+        
+        <label class="form-check-label">
+            {{ form.clear_existing(class="form-check-input") }}
+            Clear existing dataset before loading
+        </label>
+        
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+</section>
+
+<section class="mt-4">
+    <h5><i class="fas fa-info-circle"></i> Expected Directory Structure</h5>
+    <pre class="bg-light p-3">
+dataset/
+├── Train/
+│   ├── 0/
+│   │   ├── image1.jpg
+│   │   └── image2.jpg
+│   ├── 1/
+│   │   ├── image3.jpg
+│   │   └── image4.jpg
+│   └── ...
+└── Test/
+    ├── 0/
+    │   ├── test1.jpg
+    │   └── test2.jpg
+    └── ...
+</pre>
+</section>
+
+<section class="mt-4">
+    <h5><i class="fas fa-list"></i> Traffic Sign Classes (0-42)</h5>
+    <p class="small">
+        <strong>0-8:</strong> Speed limit signs |
+        <strong>9-10:</strong> No passing signs |
+        <strong>11-17:</strong> Priority and prohibition |
+        <strong>18-31:</strong> Warning signs |
+        <strong>32-42:</strong> Mandatory signs
+    </p>
+</section>
+
+
+
+
+{% endblock %}

@@ -212,6 +212,10 @@ __marimo__/
 
 #Directories
 others/
-dataset/
+
+
 
 .~lock.baigiamojo_projekto_aprasas.docx#
+app/static/dataset
+app/static/models
+

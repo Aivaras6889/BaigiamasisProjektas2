@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Dataset Explorer - Traffic Sign Recognition{% endblock %}
+
+{% block content %}
+<h2><i class="fas fa-search"></i> Dataset Explorer</h2>
+<p class="text-muted">Browse and explore your loaded dataset</p>
+
+<form method="GET" class="mb-4">
+    <label for="class_filter">Filter by Class:</label>
+    <select name="class_filter" class="form-select" onchange="this.form.submit()">
+        <option value="">All Classes</option>
+        {% for class_id in available_classes %}
+        <option value="{{ class_id }}" {{ 'selected' if class_id|string == selected_class }}>
+            Class {{ class_id }}
+        </option>
+        {% endfor %}
+    </select>
+    
+    <label for="dataset_type">Dataset Type:</label>
+    <select name="dataset_type" class="form-select" onchange="this.form.submit()">
+        <option value="">All</option>
+        <option value="train" {{ 'selected' if dataset_type == 'train' }}>Training</option>
+        <option value="test" {{ 'selected' if dataset_type == 'test' }}>Test</option>
+    </select>
+    
+    <label for="per_page">Images per page:</label>
+    <select name="per_page" class="form-select" onchange="this.form.submit()">
+        <option value="20" {{ 'selected' if per_page == 20 }}>20</option>
+        <option value="50" {{ 'selected' if per_page == 50 }}>50</option>
+        <option value="100" {{ 'selected' if per_page == 100 }}>100</option>
+    </select>
+</form>
+
+{% if images %}
+<h5><i class="fas fa-images"></i> Images ({{ total_images }} total, showing {{ images|length }})</h5>
+
+{% for image in images %}
+<figure class="d-inline-block text-center m-2">
+    <img src="{{ url_for('static', filename=image.image_path) }}" 
+         class="img-thumbnail" 
+         style="width: 100px; height: 100px;"
+         alt="Class {{ image.class_id }}"
+         onclick="showImageModal('{{ image.image_path }}', '{{ image.class_id }}', '{{ image.dataset_type }}')">
+    <figcaption class="small">
+        <strong>{{ image.class_id }}</strong><br>
+        <span class="badge bg-{{ 'primary' if image.dataset_type == 'train' else 'success' }}">
+            {{ image.dataset_type }}
+        </span>
+    </figcaption>
+</figure>
+{% endfor %}
+
+<nav aria-label="Image pagination">
+    <ul class="pagination justify-content-center">
+        {% if has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('dataset.dataset_explorer', page=prev_num, class_filter=selected_class, dataset_type=dataset_type, per_page=per_page) }}">Previous</a>
+        </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">Page {{ page }}</span>
+        </li>
+        
+        {% if has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('dataset.dataset_explorer', page=next_num, class_filter=selected_class, dataset_type=dataset_type, per_page=per_page) }}">Next</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% else %}
+<p class="text-muted">No images found matching the current filters</p>
+{% endif %}
+
+<!-- Modal for full-size image view -->
+<dialog id="imageModal" class="modal">
+    <article class="modal-content">
+        <header class="modal-header">
+            <h5 id="modalTitle">Image Details</h5>
+            <button type="button" class="btn-close" onclick="closeImageModal()"></button>
+        </header>
+        <section class="modal-body text-center">
+            <img id="modalImage" src="" class="img-fluid" alt="">
+            <p id="modalInfo"></p>
+        </section>
+    </article>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showImageModal(imagePath, classId, datasetType) {
+    document.getElementById('modalImage').src = "{{ url_for('static', filename='') }}" + imagePath;
+    document.getElementById('modalTitle').textContent = 'Class ' + classId + ' - ' + datasetType;
+    document.getElementById('modalInfo').innerHTML = 
+        '<strong>Class:</strong> ' + classId + '<br>' +
+        '<strong>Type:</strong> ' + datasetType + '<br>' +
+        '<strong>Path:</strong> ' + imagePath;
+    document.getElementById('imageModal').showModal();
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').close();
+}
+</script>
+{% endblock %}
